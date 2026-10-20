@@ -1,0 +1,15 @@
+{
+  "id": "eyes-on-cost",
+  "name": "Eyes on Cost",
+  "icon": "coin",
+  "accent": "#f59e0b",
+  "entry": "server.js",
+  "port": 7779,
+  "autostart": false,
+  "repo": "https://github.com/dfadify-web/eyes-on-cost",
+  "install": "npx -y github:dfadify-web/eyes-on-cost",
+  "description": {
+    "en": "What your Claude Code sessions would cost on the API, live: real tokens per response, cache hit rate and savings, spend per session, model and minute.",
+    "es": "Lo que costarían tus sesiones de Claude Code en la API, en directo: tokens reales por respuesta, acierto y ahorro de caché, gasto por sesión, modelo y minuto."
+  }
+}

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eyes on Cost</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='8' fill='%23f59e0b'/%3E%3Cpath d='M19 12.5c-.6-1.2-1.8-1.8-3-1.8-1.8 0-3 .9-3 2.2s1.3 1.8 3 2.1 3 .9 3 2.2-1.3 2.1-3 2.1c-1.4 0-2.6-.6-3.1-1.8M16 8.5v2.2M16 19.3v2.2' stroke='%23111' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit.css">
+<style>
+  :root { --x: #f59e0b; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } }
+  .money { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .money .big { font-size: 58px; background: linear-gradient(120deg, var(--text) 30%, var(--x)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .money small { color: var(--faint); font-size: 12px; }
+  .split { display: flex; height: 12px; border-radius: 8px; overflow: hidden; margin: 14px 0 8px; background: var(--card-2); }
+  .split i { display: block; height: 100%; transition: width .6s var(--ease); }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend em { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+  .legend b { font: 600 12px var(--mono); color: var(--text); }
+  .ring-wrap { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+  .ring { width: 132px; height: 132px; position: relative; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 12; }
+  .ring .bg { stroke: var(--card-2); }
+  .ring .fg { stroke: url(#rg); stroke-linecap: round; transition: stroke-dashoffset .8s var(--ease); }
+  .ring .lbl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .ring .lbl b { font: 700 24px var(--mono); display: block; }
+  .ring .lbl span { font-size: 10px; color: var(--faint); display: block; max-width: 86px; line-height: 1.3; margin: 2px auto 0; }
+  .stack { display: grid; gap: 8px; }
+  .stack .row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); }
+  .stack .row b { font: 600 13px var(--mono); color: var(--text); }
+  #chart { width: 100%; height: 230px; display: block; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+  @media (max-width: 1000px) { .grid2 { grid-template-columns: 1fr; } }
+  .models { display: grid; gap: 10px; }
+  .model { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: center; }
+  .model em { width: 12px; height: 12px; border-radius: 4px; }
+  .model .nm { font-weight: 600; font-size: 13px; }
+  .model .sub { font: 11px var(--mono); color: var(--faint); }
+  .model .v { font: 600 14px var(--mono); text-align: right; }
+  .sess-name { font-weight: 600; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sess-sub { font: 10.5px var(--mono); color: var(--faint); }
+  .note { font-size: 12px; color: var(--faint); line-height: 1.6; }
+  .note code { font-family: var(--mono); background: var(--card-2); padding: 0 5px; border-radius: 4px; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--x); box-shadow: 0 0 0 0 var(--x); animation: pulse 1.6s infinite; display: inline-block; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px transparent; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="tile" id="logo"></span><div><div class="brand-name">Eyes on Cost</div><div class="brand-sub">extension · Eyes on Claude</div></div></div>
+  <span class="pill" id="conn"></span>
+  <div class="grow"></div>
+  <div class="seg" id="range"></div>
+</header>
+<main><div class="wrap">
+  <section class="hero">
+    <div class="card">
+      <h3><span id="hTotal"></span><span class="r" id="burn"></span></h3>
+      <div class="money"><span class="big" id="cost">$0.00</span><small id="costNote"></small></div>
+      <div class="split" id="split"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="card">
+      <h3 id="hCache"></h3>
+      <div class="ring-wrap">
+        <div class="ring"><svg viewBox="0 0 132 132"><defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#d97757"/></linearGradient></defs><circle class="bg" cx="66" cy="66" r="56"/><circle class="fg" id="ringFg" cx="66" cy="66" r="56" stroke-dasharray="351.86" stroke-dashoffset="351.86"/></svg>
+          <div class="lbl"><div><b id="hit">0%</b><span id="hitLbl"></span></div></div></div>
+        <div class="stack" id="cacheStack"></div>
+      </div>
+    </div>
+  </section>
+  <section class="kpis" id="kpis"></section>
+  <section class="card"><h3 id="hChart"></h3><svg id="chart"></svg></section>
+  <section class="grid2">
+    <div class="card"><h3 id="hSess"></h3><div id="sessions"></div></div>
+    <div class="card"><h3 id="hModels"></h3><div class="models" id="models"></div></div>
+  </section>
+  <section class="grid2">
+    <div class="card"><h3 id="hTop"></h3><div id="top"></div></div>
+    <div class="card"><h3 id="hPrices"></h3><div id="prices"></div><p class="note" id="note"></p></div>
+  </section>
+</div></main>
+<script src="kit.js"></script>
+<script>
+const { icon, esc, fmtTok, fmtTime, fmtDur, base, connect, showTip, hideTip, LANG } = EOC;
+const T = EOC.T({
+  es: { total: 'Gasto equivalente en la API', burn: (v) => `${v}/h en los últimos 10 min`, costNote: 'según los tokens reales de cada respuesta', cache: 'Caché de prompts', hitLbl: 'del contexto leído de caché', saved: 'Ahorro por caché',
+    input: 'Entrada', cacheW: 'Escritura caché', cacheR: 'Lectura caché', output: 'Salida', requests: 'peticiones', sessions: 'sesiones', agents: 'subagentes', outTok: 'tokens de salida', ctxTok: 'tokens de contexto', avg: 'coste medio / petición',
+    chart: 'Gasto acumulado y por minuto', sess: 'Sesiones', models: 'Modelos', top: 'Peticiones más caras', prices: 'Precios usados ($ / millón de tokens)', model: 'Modelo', session: 'Sesión', cost: 'Coste', tokens: 'Tokens', when: 'Hora',
+    note: 'Precios oficiales de la API de Anthropic (entrada/salida). Escritura en caché = 1,25× la entrada (caché de 5 min); lectura = precio publicado o 0,1× la entrada. Si usas Claude Code con suscripción no pagas esto por token: es lo que costaría por API. Los tokens son los reales de cada respuesta del transcript.',
+    all: 'Todo', h1: '1 h', m15: '15 min', unknown: 'precio desconocido', empty: 'Aún no hay respuestas de Claude en el stream.' },
+  en: { total: 'API-equivalent spend', burn: (v) => `${v}/h over the last 10 min`, costNote: 'from the real tokens of every response', cache: 'Prompt cache', hitLbl: 'of context read from cache', saved: 'Saved by cache',
+    input: 'Input', cacheW: 'Cache write', cacheR: 'Cache read', output: 'Output', requests: 'requests', sessions: 'sessions', agents: 'subagents', outTok: 'output tokens', ctxTok: 'context tokens', avg: 'avg cost / request',
+    chart: 'Cumulative and per-minute spend', sess: 'Sessions', models: 'Models', top: 'Most expensive requests', prices: 'Prices used ($ / million tokens)', model: 'Model', session: 'Session', cost: 'Cost', tokens: 'Tokens', when: 'Time',
+    note: 'Official Anthropic API prices (input/output). Cache write = 1.25× input (5-minute cache); cache read = published price or 0.1× input. With a Claude Code subscription you do not pay this per token: it is what the same usage would cost on the API. Token counts are the real ones from each response in the transcript.',
+    all: 'All', h1: '1 h', m15: '15 min', unknown: 'unknown price', empty: 'No Claude responses in the stream yet.' },
+});
+// $ por millón de tokens [entrada, salida, lectura de caché] — tabla oficial (2026-10)
+const PRICES = [
+  [/fable-5-1|mythos-5-1/, 'Fable 5.1', 10, 50, 0.25], [/fable-5|mythos-5/, 'Fable 5', 10, 50], [/opus-5-5/, 'Opus 5.5', 4, 20, 0.20], [/opus-5(?!-\d)/, 'Opus 5', 5, 25],
+  [/opus-4-[5-8]/, 'Opus 4.5–4.8', 5, 25], [/opus-4/, 'Opus 4 / 4.1', 15, 75], [/sonnet-5-5/, 'Sonnet 5.5', 2, 10, 0.20], [/sonnet-5(?!-\d)/, 'Sonnet 5', 2, 10],
+  [/sonnet-4/, 'Sonnet 4.x', 3, 15], [/haiku-5-5/, 'Haiku 5.5', 0.10, 0.50], [/haiku-4/, 'Haiku 4.5', 1, 5],
+];
+const MODEL_COLORS = ['#f59e0b', '#d97757', '#a78bfa', '#22d3ee', '#4ade80', '#f472b6', '#60a5fa'];
+const priceOf = (model) => { const m = String(model).toLowerCase(); const p = PRICES.find(([re]) => re.test(m)); return p ? { label: p[1], in: p[2], out: p[3], cr: p[4] ?? p[2] * 0.1, cw: p[2] * 1.25 } : null; };
+const costOf = (u) => { const p = priceOf(u.model); if (!p) return 0; return (u.input * p.in + u.cacheWrite * p.cw + u.cacheRead * p.cr + u.output * p.out) / 1e6; };
+const money = (v) => (v >= 100 ? `$${v.toFixed(0)}` : v >= 1 ? `$${v.toFixed(2)}` : `$${v.toFixed(3)}`);
+
+const S = { usage: new Map(), titles: new Map(), cwd: new Map(), range: EOC.store.get('eoc.cost.range', 'all') };
+document.getElementById('logo').innerHTML = icon('coin');
+for (const [id, k] of [['hTotal', 'total'], ['hCache', 'cache'], ['hitLbl', 'hitLbl'], ['hChart', 'chart'], ['hSess', 'sess'], ['hModels', 'models'], ['hTop', 'top'], ['hPrices', 'prices'], ['note', 'note'], ['costNote', 'costNote']]) document.getElementById(id).textContent = T(k);
+const rangeEl = document.getElementById('range');
+rangeEl.innerHTML = [['all', 'all'], ['60', 'h1'], ['15', 'm15']].map(([v, k]) => `<button data-v="${v}" class="${S.range === v ? 'on' : ''}">${T(k)}</button>`).join('');
+rangeEl.onclick = (e) => { const b = e.target.closest('button'); if (!b) return; S.range = b.dataset.v; EOC.store.set('eoc.cost.range', S.range); rangeEl.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); render(); };
+document.getElementById('prices').innerHTML = `<table class="t"><tr><th>${T('model')}</th><th class="n">in</th><th class="n">out</th><th class="n">cache w</th><th class="n">cache r</th></tr>${PRICES.map(([, l, i, o, cr]) => `<tr><td>${l}</td><td class="n">${i}</td><td class="n">${o}</td><td class="n">${+(i * 1.25).toFixed(3)}</td><td class="n">${+(cr ?? i * 0.1).toFixed(3)}</td></tr>`).join('')}</table>`;
+
+function onEvent(ev, replay) {
+  if (ev.kind === 'lane' && ev.lane === 'main') { if (ev.title) S.titles.set(ev.session, ev.title); if (ev.cwd) S.cwd.set(ev.session, ev.cwd); }
+  if (ev.kind === 'usage') S.usage.set(ev.msgId, ev); // la última emisión de cada respuesta lleva los tokens finales
+  if (!replay && (ev.kind === 'usage' || ev.kind === 'lane')) schedule();
+}
+let raf; const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); };
+
+function render() {
+  const now = Date.now(), since = S.range === 'all' ? 0 : now - Number(S.range) * 60000;
+  const list = [...S.usage.values()].filter((u) => u.ts >= since).sort((a, b) => a.ts - b.ts);
+  const tot = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0, cost: 0 }, parts = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
+  const bySess = new Map(), byModel = new Map();
+  let saved = 0;
+  for (const u of list) {
+    const p = priceOf(u.model), c = costOf(u);
+    u.cost = c;
+    for (const k of ['input', 'cacheWrite', 'cacheRead', 'output']) tot[k] += u[k];
+    tot.cost += c;
+    if (p) { parts.input += u.input * p.in / 1e6; parts.cacheWrite += u.cacheWrite * p.cw / 1e6; parts.cacheRead += u.cacheRead * p.cr / 1e6; parts.output += u.output * p.out / 1e6; saved += u.cacheRead * (p.in - p.cr) / 1e6; }
+    const s = bySess.get(u.session) || { cost: 0, n: 0, out: 0, lanes: new Set(), models: new Set(), last: 0 };
+    s.cost += c; s.n++; s.out += u.output; s.lanes.add(u.lane); s.models.add(p?.label || u.model); s.last = Math.max(s.last, u.ts); bySess.set(u.session, s);
+    const key = p?.label || u.model;
+    const m = byModel.get(key) || { cost: 0, n: 0, out: 0, ctx: 0, known: !!p }; m.cost += c; m.n++; m.out += u.output; m.ctx += u.input + u.cacheRead + u.cacheWrite; byModel.set(key, m);
+  }
+  document.getElementById('cost').textContent = money(tot.cost);
+  const recent = list.filter((u) => u.ts > now - 600000).reduce((a, u) => a + u.cost, 0);
+  document.getElementById('burn').innerHTML = recent ? `<span class="live-dot"></span> ${T('burn', money(recent * 6))}` : '';
+  const COL = { input: '#60a5fa', cacheWrite: '#a78bfa', cacheRead: '#4ade80', output: '#f59e0b' };
+  const totP = Object.values(parts).reduce((a, b) => a + b, 0) || 1;
+  document.getElementById('split').innerHTML = Object.entries(parts).map(([k, v]) => `<i style="width:${(v / totP) * 100}%;background:${COL[k]}"></i>`).join('');
+  document.getElementById('legend').innerHTML = [['input', 'input'], ['cacheWrite', 'cacheW'], ['cacheRead', 'cacheR'], ['output', 'output']].map(([k, l]) => `<span><em style="background:${COL[k]}"></em>${T(l)} <b>${money(parts[k])}</b> · ${fmtTok(tot[k])}</span>`).join('');
+
+  const ctx = tot.input + tot.cacheRead + tot.cacheWrite, hit = ctx ? tot.cacheRead / ctx : 0;
+  document.getElementById('hit').textContent = `${Math.round(hit * 100)}%`;
+  document.getElementById('ringFg').style.strokeDashoffset = String(351.86 * (1 - hit));
+  document.getElementById('cacheStack').innerHTML = [[T('cacheR'), fmtTok(tot.cacheRead)], [T('cacheW'), fmtTok(tot.cacheWrite)], [T('input'), fmtTok(tot.input)], [T('saved'), money(saved)]].map(([a, b]) => `<div class="row"><span>${a}</span><b>${b}</b></div>`).join('');
+
+  const agents = new Set(list.filter((u) => u.lane !== 'main').map((u) => u.session + u.lane)).size;
+  document.getElementById('kpis').innerHTML = [[list.length, T('requests')], [bySess.size, T('sessions')], [agents, T('agents')], [fmtTok(tot.output), T('outTok')], [fmtTok(ctx), T('ctxTok')], [list.length ? money(tot.cost / list.length) : '—', T('avg')]]
+    .map(([v, l], i) => `<div class="kpi ${i === 0 && recent ? 'hot' : ''}"><b>${v}</b><span>${l}</span></div>`).join('');
+
+  drawChart(list, since || (list[0]?.ts ?? now), now);
+
+  const sess = [...bySess.entries()].sort((a, b) => b[1].cost - a[1].cost);
+  const maxS = sess[0]?.[1].cost || 1;
+  document.getElementById('sessions').innerHTML = sess.length ? `<table class="t"><tr><th>${T('session')}</th><th></th><th class="n">${T('requests')}</th><th class="n">${T('cost')}</th></tr>${sess.slice(0, 12).map(([id, s]) =>
+    `<tr><td><div class="sess-name">${esc(S.titles.get(id) || base(S.cwd.get(id)) || id.slice(0, 8))}</div><div class="sess-sub">${esc(id.slice(0, 8))} · ${[...s.models].map(esc).join(', ')}${s.lanes.size > 1 ? ` · ${s.lanes.size - 1} ${T('agents')}` : ''}</div></td>
+     <td style="width:28%"><div class="bar"><i style="width:${(s.cost / maxS) * 100}%"></i></div></td><td class="n">${s.n}</td><td class="n"><b>${money(s.cost)}</b></td></tr>`).join('')}</table>` : `<div class="empty">${T('empty')}</div>`;
+
+  const models = [...byModel.entries()].sort((a, b) => b[1].cost - a[1].cost);
+  document.getElementById('models').innerHTML = models.map(([k, m], i) => `<div class="model"><em style="background:${MODEL_COLORS[i % MODEL_COLORS.length]}"></em><div><div class="nm">${esc(k)}</div><div class="sub">${m.n} ${T('requests')} · ${fmtTok(m.out)} out · ${fmtTok(m.ctx)} ctx${m.known ? '' : ` · ${T('unknown')}`}</div></div><div class="v">${money(m.cost)}</div></div>`).join('') || `<div class="empty">—</div>`;
+
+  const top = [...list].sort((a, b) => b.cost - a.cost).slice(0, 8);
+  document.getElementById('top').innerHTML = top.length ? `<table class="t"><tr><th>${T('when')}</th><th>${T('session')}</th><th class="n">${T('tokens')}</th><th class="n">${T('cost')}</th></tr>${top.map((u) =>
+    `<tr><td class="mono">${fmtTime(u.ts)}</td><td><span class="sess-name" style="display:block;max-width:220px">${esc(S.titles.get(u.session) || u.session.slice(0, 8))}</span><span class="sess-sub">${u.lane === 'main' ? 'main' : 'agent ' + esc(u.lane.slice(0, 6))} · ${esc(priceOf(u.model)?.label || u.model)}</span></td><td class="n">${fmtTok(u.input + u.cacheRead + u.cacheWrite)} → ${fmtTok(u.output)}</td><td class="n"><b>${money(u.cost)}</b></td></tr>`).join('')}</table>` : `<div class="empty">${T('empty')}</div>`;
+}
+
+function drawChart(list, t0, t1) {
+  const svg = document.getElementById('chart');
+  const W = svg.clientWidth || 800, H = 230, pad = { l: 46, r: 12, t: 10, b: 24 };
+  if (!list.length || t1 <= t0) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" style="fill:var(--faint)" font-size="12">${T('empty')}</text>`; return; }
+  const span = t1 - t0, bucketMs = span > 6 * 3600e3 ? 600e3 : span > 3600e3 ? 120e3 : 60e3, nb = Math.max(1, Math.ceil(span / bucketMs));
+  const buckets = new Array(nb).fill(0);
+  let cum = 0; const pts = [[t0, 0]];
+  for (const u of list) { buckets[Math.min(nb - 1, Math.floor((u.ts - t0) / bucketMs))] += u.cost; cum += u.cost; pts.push([u.ts, cum]); }
+  pts.push([t1, cum]);
+  const X = (t) => pad.l + ((t - t0) / span) * (W - pad.l - pad.r), Y = (v) => H - pad.b - (v / (cum || 1)) * (H - pad.t - pad.b);
+  const maxB = Math.max(...buckets) || 1, bw = (W - pad.l - pad.r) / nb;
+  const bars = buckets.map((v, i) => v ? `<rect x="${pad.l + i * bw + 1}" y="${H - pad.b - (v / maxB) * (H - pad.t - pad.b) * 0.45}" width="${Math.max(1, bw - 2)}" height="${(v / maxB) * (H - pad.t - pad.b) * 0.45}" rx="2" style="fill:var(--x)" opacity=".28" data-v="${v}" data-t="${t0 + i * bucketMs}"/>` : '').join('');
+  const line = pts.map(([t, v], i) => `${i ? 'L' : 'M'}${X(t).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+  const grid = [0, 0.5, 1].map((k) => `<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(cum * k)}" y2="${Y(cum * k)}" style="stroke:var(--line)" stroke-dasharray="3 4"/><text x="${pad.l - 6}" y="${Y(cum * k) + 4}" text-anchor="end" font-size="10" style="fill:var(--faint)" font-family="JetBrains Mono">${money(cum * k)}</text>`).join('');
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((k) => `<text x="${X(t0 + span * k)}" y="${H - 6}" text-anchor="middle" font-size="10" style="fill:var(--faint)" font-family="JetBrains Mono">${fmtTime(t0 + span * k).slice(0, 5)}</text>`).join('');
+  svg.innerHTML = `<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f59e0b" stop-opacity=".35"/><stop offset="1" stop-color="#f59e0b" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${bars}<path d="${line}L${X(t1)},${H - pad.b}L${X(t0)},${H - pad.b}Z" fill="url(#ga)"/><path d="${line}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="${X(t1)}" cy="${Y(cum)}" r="4" fill="#f59e0b"/>${ticks}`;
+  svg.querySelectorAll('rect[data-v]').forEach((r) => { r.onmousemove = (e) => showTip(e, `<b>${money(+r.dataset.v)}</b><span class="m">${fmtTime(+r.dataset.t)}</span>`); r.onmouseleave = hideTip; });
+}
+
+connect({ onEvent, onReset: () => { S.usage.clear(); }, onReplayed: render, pill: document.getElementById('conn') });
+addEventListener('resize', schedule);
+setInterval(render, 15000);
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "eyes-on-cost",
+  "version": "0.1.0",
+  "description": "Eyes on Claude extension: What your Claude Code sessions would cost on the API, live: real tokens per response, cache hit rate and savings, spend per session, model and minute.",
+  "license": "MIT",
+  "author": "dfadify-web",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfadify-web/eyes-on-cost.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "eyes-on-claude",
+    "extension"
+  ],
+  "bin": {
+    "eyes-on-cost": "install.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/smoke.js",
+    "install-ext": "node install.js",
+    "uninstall-ext": "node install.js --uninstall"
+  }
+}
